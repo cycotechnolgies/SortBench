@@ -47,26 +47,24 @@ The application measures the actual execution time of each algorithm using the s
 
 ## Technology Stack
 
-| Technology                      | Purpose                                          |
-| ------------------------------- | ------------------------------------------------ |
-| Java 17                         | Main programming language                        |
-| Java Swing                      | Graphical User Interface                         |
-| Apache Maven                    | Build and dependency management                  |
-| JUnit 5                         | Unit testing                                     |
-| Git                             | Version control                                  |
-| GitHub                          | Source code collaboration and repository hosting |
-| Eclipse IDE for Java Developers | Development environment                          |
+| Technology      | Purpose                                          |
+| --------------- | ------------------------------------------------ |
+| Java 17         | Main programming language                        |
+| Java Swing      | Graphical User Interface                         |
+| Apache Maven    | Build and dependency management                  |
+| JUnit 5         | Unit testing                                     |
+| Git             | Version control                                  |
+| GitHub          | Source code collaboration and repository hosting |
+| Apache NetBeans | Development environment                          |
 
 ### Download Links
 
 * **Java JDK 17:** [Oracle Java Downloads](https://www.oracle.com/java/technologies/downloads/?utm_source=chatgpt.com)
-* **Eclipse IDE for Java Developers:** [Eclipse IDE for Java Developers](https://www.eclipse.org/downloads/packages/release/2026-06/r/eclipse-ide-java-developers?utm_source=chatgpt.com)
-* **Apache Maven:** [Apache Maven Downloads](https://maven.apache.org/download.cgi?source=post_page-----20eefce259ea---------------------------------------&utm_source=chatgpt.com)
+* **Apache NetBeans:** [Apache NetBeans](https://netbeans.apache.org/front/main/download/?utm_source=chatgpt.com)
+* **Apache Maven:** [Apache Maven Downloads](https://maven.apache.org/download.cgi?utm_source=chatgpt.com)
 * **Git:** [Git Downloads](https://git-scm.com/downloads?utm_source=chatgpt.com)
 * **GitHub:** [GitHub](https://github.com/?utm_source=chatgpt.com)
 * **JUnit 5:** [JUnit 5 User Guide](https://junit.org/junit5/docs/current/user-guide/?utm_source=chatgpt.com)
-
-Eclipse IDE for Java Developers provides Java development tools along with Git and Maven integration.
 
 ---
 
@@ -76,7 +74,7 @@ For consistent development across the project, use:
 
 ```text
 Java JDK        : 17
-IDE             : Eclipse IDE for Java Developers
+IDE             : Apache NetBeans
 Build Tool      : Apache Maven
 Testing         : JUnit 5
 Version Control : Git
@@ -84,7 +82,7 @@ Repository      : GitHub
 GUI Framework   : Java Swing
 ```
 
-All developers should use Java 17 to avoid compatibility differences between development environments.
+All developers should use **Java 17** to avoid compatibility differences between development environments.
 
 ---
 
@@ -182,9 +180,10 @@ SortBench/
 Before running the project, install:
 
 1. Java JDK 17
-2. Eclipse IDE for Java Developers
+2. Apache NetBeans
 3. Apache Maven
 4. Git
+5. A GitHub account for repository collaboration
 
 Verify the installations using:
 
@@ -200,50 +199,56 @@ git --version
 
 ### 1. Clone the Repository
 
+Clone the project from GitHub:
+
 ```bash
 git clone <repository-url>
 ```
 
-Navigate into the project:
+Navigate into the project directory:
 
 ```bash
 cd SortBench
 ```
 
-### 2. Import into Eclipse
+---
 
-Open Eclipse and select:
+### 2. Open the Project in Apache NetBeans
+
+Open Apache NetBeans and select:
 
 ```text
 File
-→ Import
-→ Maven
-→ Existing Maven Projects
+→ Open Project
 ```
 
-Select the `SortBench` project directory and finish the import.
+Select the `SortBench` project directory.
 
-Eclipse should automatically recognize the Maven configuration from `pom.xml`.
+Since the project uses Maven, NetBeans should automatically recognize the `pom.xml` file and load the required project configuration.
+
+---
 
 ### 3. Build the Project
 
-From the project directory:
+From the project directory, run:
 
 ```bash
 mvn clean install
 ```
 
+Alternatively, the project can be built directly from Apache NetBeans.
+
 ---
 
 ## Running the Application
 
-The application can be launched from Eclipse by running:
+The application can be launched from Apache NetBeans by running:
 
 ```text
 Main.java
 ```
 
-Alternatively, Maven can be used to run the application if the project is configured with the Maven Exec plugin.
+The application will open the SortBench graphical user interface.
 
 ---
 
@@ -278,9 +283,6 @@ The general application workflow is:
 ## User Interface
 
 The planned interface contains the following sections:
-
----
-
 <img width="1312" height="1199" alt="ChatGPT Image Sep 29, 2026, 03_06_19 PM" src="https://github.com/user-attachments/assets/c39eba57-307e-4a7a-b812-469dc7483901" />
 
 ---
@@ -289,7 +291,7 @@ The planned interface contains the following sections:
 
 Each sorting algorithm receives the same input dataset to provide a fair performance comparison.
 
-Execution time is measured before and after the sorting operation using Java's timing facilities.
+The execution time is measured before and after the sorting operation.
 
 Conceptually:
 
@@ -313,7 +315,7 @@ The results are displayed in the GUI for comparison.
 
 ## Testing
 
-JUnit 5 is used for testing the sorting algorithms and core functionality.
+JUnit 5 is used to test the sorting algorithms and core functionality.
 
 Tests should cover cases such as:
 
@@ -371,17 +373,17 @@ main
 
 ### Main Branches
 
-**main**
+#### main
 
 Contains stable versions of the project.
 
-**develop**
+#### develop
 
 Used for integrating completed features before merging them into `main`.
 
 ### Feature Branches
 
-Create a separate branch for each major feature.
+Each major feature should be developed on a separate branch.
 
 Example:
 
@@ -399,7 +401,7 @@ git commit -m "feat: implement CSV reader"
 git push origin feature/member1-csv
 ```
 
-Create a Pull Request and merge the feature into `develop`.
+Then create a Pull Request and merge the feature into `develop`.
 
 ---
 
@@ -424,15 +426,17 @@ docs: update README
 
 ## Development Guidelines
 
-* Follow Java naming conventions.
+* Follow standard Java naming conventions.
 * Keep classes focused on a single responsibility.
 * Avoid unnecessary duplicated code.
-* Write meaningful method and variable names.
+* Use meaningful method and variable names.
 * Add comments where the logic is not immediately obvious.
 * Test new functionality before merging.
 * Pull the latest `develop` branch before starting new work.
 * Avoid directly pushing unfinished features to `main`.
 * Keep commits small and meaningful.
+* Maintain consistent Java 17 compatibility.
+* Keep the project structure organized.
 
 ---
 
