@@ -2,7 +2,7 @@
 
 SortBench is a Java desktop application designed to analyze and compare the performance of different sorting algorithms using numerical data from CSV files.
 
-The application allows users to upload a CSV dataset, select a numerical column, run multiple sorting algorithms, measure their execution times, and identify the fastest-performing algorithm for the selected dataset.
+The application allows users to upload a CSV dataset, select a numerical column, run multiple sorting algorithms, measure their execution times, and compare their performance.
 
 ---
 
@@ -33,15 +33,15 @@ The application allows users to upload a CSV dataset, select a numerical column,
 
 SortBench currently implements the following algorithms:
 
-| Algorithm      | General Approach                                |
-| -------------- | ----------------------------------------------- |
-| Insertion Sort | Builds the sorted portion one element at a time |
-| Shell Sort     | Performs insertion sorting with decreasing gaps |
-| Merge Sort     | Divide-and-conquer sorting using merging        |
-| Quick Sort     | Divide-and-conquer sorting using a pivot        |
-| Heap Sort      | Uses a binary heap to perform sorting           |
+| Algorithm      | General Approach                                 |
+| -------------- | ------------------------------------------------ |
+| Insertion Sort | Builds the sorted portion one element at a time  |
+| Shell Sort     | Performs insertion sorting using decreasing gaps |
+| Merge Sort     | Divide-and-conquer sorting using merging         |
+| Quick Sort     | Divide-and-conquer sorting using a pivot         |
+| Heap Sort      | Uses a binary heap to perform sorting            |
 
-The application measures the actual execution time of each algorithm using the same input data so that their performance can be compared.
+Each algorithm receives the same input data so that their execution performance can be compared consistently.
 
 ---
 
@@ -49,7 +49,7 @@ The application measures the actual execution time of each algorithm using the s
 
 | Technology      | Purpose                                          |
 | --------------- | ------------------------------------------------ |
-| Java 17         | Main programming language                        |
+| Java 25 LTS     | Main programming language                        |
 | Java Swing      | Graphical User Interface                         |
 | Apache Maven    | Build and dependency management                  |
 | JUnit 5         | Unit testing                                     |
@@ -59,8 +59,8 @@ The application measures the actual execution time of each algorithm using the s
 
 ### Download Links
 
-* **Java JDK 17:** [Oracle Java Downloads](https://www.oracle.com/java/technologies/downloads/?utm_source=chatgpt.com)
-* **Apache NetBeans:** [Apache NetBeans](https://netbeans.apache.org/front/main/download/?utm_source=chatgpt.com)
+* **Java JDK 25:** [Oracle Java Downloads](https://www.oracle.com/java/technologies/downloads/?utm_source=chatgpt.com)
+* **Apache NetBeans:** [Apache NetBeans Downloads](https://netbeans.apache.org/front/main/download/?utm_source=chatgpt.com)
 * **Apache Maven:** [Apache Maven Downloads](https://maven.apache.org/download.cgi?utm_source=chatgpt.com)
 * **Git:** [Git Downloads](https://git-scm.com/downloads?utm_source=chatgpt.com)
 * **GitHub:** [GitHub](https://github.com/?utm_source=chatgpt.com)
@@ -70,10 +70,10 @@ The application measures the actual execution time of each algorithm using the s
 
 ## Recommended Development Environment
 
-For consistent development across the project, use:
+All developers should use the same Java version and development tools to avoid compatibility issues.
 
 ```text
-Java JDK        : 17
+Java JDK        : 25 LTS
 IDE             : Apache NetBeans
 Build Tool      : Apache Maven
 Testing         : JUnit 5
@@ -82,44 +82,27 @@ Repository      : GitHub
 GUI Framework   : Java Swing
 ```
 
-All developers should use **Java 17** to avoid compatibility differences between development environments.
+### Java Version
+
+The project uses **Java 25 LTS**.
+
+Java 25 is an LTS release, making it suitable for a new project that requires a stable and supported Java version.
+
+Check the installed Java version:
+
+```bash
+java -version
+```
+
+The output should indicate Java 25.
 
 ---
 
 ## Project Architecture
 
-The project follows a simple layered structure:
+The project follows a simple layered architecture:
 
-```text
-CSV Input
-   │
-   ▼
-CSV Reader
-   │
-   ▼
-Dataset Model
-   │
-   ▼
-Column Selection
-   │
-   ▼
-Sorting Algorithms
-   │
-   ├── Insertion Sort
-   ├── Shell Sort
-   ├── Merge Sort
-   ├── Quick Sort
-   └── Heap Sort
-   │
-   ▼
-Performance Evaluator
-   │
-   ▼
-Performance Results
-   │
-   ▼
-Swing GUI
-```
+<img width="912" height="367" alt="Untitled Diagram" src="https://github.com/user-attachments/assets/fdc0b8ca-86e8-46ac-aa21-c1f5840a97e4" />
 
 ---
 
@@ -179,19 +162,21 @@ SortBench/
 
 Before running the project, install:
 
-1. Java JDK 17
+1. Java JDK 25 LTS
 2. Apache NetBeans
 3. Apache Maven
 4. Git
-5. A GitHub account for repository collaboration
+5. GitHub account
 
-Verify the installations using:
+Verify the installations:
 
 ```bash
 java -version
 mvn -version
 git --version
 ```
+
+The Java version should report **Java 25**.
 
 ---
 
@@ -205,7 +190,7 @@ Clone the project from GitHub:
 git clone <repository-url>
 ```
 
-Navigate into the project directory:
+Navigate into the project:
 
 ```bash
 cd SortBench
@@ -224,37 +209,35 @@ File
 
 Select the `SortBench` project directory.
 
-Since the project uses Maven, NetBeans should automatically recognize the `pom.xml` file and load the required project configuration.
+Because SortBench is a Maven project, NetBeans will recognize the `pom.xml` configuration.
 
 ---
 
 ### 3. Build the Project
 
-From the project directory, run:
+From the project directory:
 
 ```bash
 mvn clean install
 ```
 
-Alternatively, the project can be built directly from Apache NetBeans.
+Alternatively, the project can be built directly through Apache NetBeans.
 
 ---
 
 ## Running the Application
 
-The application can be launched from Apache NetBeans by running:
+From Apache NetBeans, run:
 
 ```text
 Main.java
 ```
 
-The application will open the SortBench graphical user interface.
+The SortBench graphical user interface will open.
 
 ---
 
 ## Application Workflow
-
-The general application workflow is:
 
 ```text
 1. Launch SortBench
@@ -283,17 +266,18 @@ The general application workflow is:
 ## User Interface
 
 The planned interface contains the following sections:
+
 <img width="1312" height="1199" alt="ChatGPT Image Sep 29, 2026, 03_06_19 PM" src="https://github.com/user-attachments/assets/c39eba57-307e-4a7a-b812-469dc7483901" />
 
 ---
 
 ## Performance Measurement
 
-Each sorting algorithm receives the same input dataset to provide a fair performance comparison.
+Each sorting algorithm receives the same input dataset.
 
-The execution time is measured before and after the sorting operation.
+The application measures the time required to complete each sorting operation.
 
-Conceptually:
+The general process is:
 
 ```text
 Start Timer
@@ -309,7 +293,7 @@ Store Result
 Display Result
 ```
 
-The results are displayed in the GUI for comparison.
+The measured results are displayed in the GUI for comparison.
 
 ---
 
@@ -317,7 +301,7 @@ The results are displayed in the GUI for comparison.
 
 JUnit 5 is used to test the sorting algorithms and core functionality.
 
-Tests should cover cases such as:
+Tests should cover:
 
 * Random numerical data
 * Already sorted data
@@ -328,7 +312,7 @@ Tests should cover cases such as:
 * Large datasets
 * Negative numbers
 
-Run the test suite using:
+Run the test suite:
 
 ```bash
 mvn test
@@ -351,7 +335,7 @@ Examples include:
 * Unsupported file format
 * Sorting operation without loaded data
 
-Instead of terminating unexpectedly, the application should display a meaningful error message to the user.
+The application should display meaningful error messages instead of terminating unexpectedly.
 
 ---
 
@@ -371,19 +355,17 @@ main
        └── feature/member3-gui
 ```
 
-### Main Branches
+### Main Branch
 
-#### main
+`main` contains stable versions of the project.
 
-Contains stable versions of the project.
+### Develop Branch
 
-#### develop
-
-Used for integrating completed features before merging them into `main`.
+`develop` is used to integrate completed features before they are merged into `main`.
 
 ### Feature Branches
 
-Each major feature should be developed on a separate branch.
+Each major feature should be developed using a separate feature branch.
 
 Example:
 
@@ -426,6 +408,7 @@ docs: update README
 
 ## Development Guidelines
 
+* Use Java 25 LTS.
 * Follow standard Java naming conventions.
 * Keep classes focused on a single responsibility.
 * Avoid unnecessary duplicated code.
@@ -433,10 +416,10 @@ docs: update README
 * Add comments where the logic is not immediately obvious.
 * Test new functionality before merging.
 * Pull the latest `develop` branch before starting new work.
-* Avoid directly pushing unfinished features to `main`.
+* Do not directly push unfinished features to `main`.
 * Keep commits small and meaningful.
-* Maintain consistent Java 17 compatibility.
-* Keep the project structure organized.
+* Maintain the existing project structure.
+* Ensure all team members use the same Java version.
 
 ---
 
@@ -461,7 +444,7 @@ Potential future improvements include:
 
 This project is licensed under the **MIT License**.
 
-See the [LICENSE](LICENSE) file for the complete license text.
+See the `LICENSE` file for the complete license text.
 
 ---
 
