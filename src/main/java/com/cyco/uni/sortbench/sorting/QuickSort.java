@@ -30,7 +30,7 @@ public class QuickSort implements SortingAlgorithm {
         return sorted;
     }   
     
-    privet void quickSort(double[] data, int low, int high){
+    private void quickSort(double[] data, int low, int high){
         if(low >= high){
             return;
         }
@@ -42,7 +42,7 @@ public class QuickSort implements SortingAlgorithm {
         
     }
     
-    privet int partition(double[] data, int low, int high){
+    private int partition(double[] data, int low, int high){
         
         int middle= low + (high - low) / 2;
         double pivot = data[middle];
@@ -64,7 +64,7 @@ public class QuickSort implements SortingAlgorithm {
     
     }
     
-    privet void swap(double[] data, int i, int j){
+    private void swap(double[] data, int i, int j){
         double temp = data[i];
         data[i] = data[j];
         data[j] = temp;
