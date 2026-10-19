@@ -6,7 +6,7 @@ import java.util.Arrays;
 /**
  * Sorts numeric arrays using the insertion sort algorithm.
  *
- * @author CYCO TECHNOLOGIES
+ * @author RMCN Rathnayaka
  */
 public class InsertionSort implements SortingAlgorithm {
 
@@ -21,9 +21,6 @@ public class InsertionSort implements SortingAlgorithm {
      * <p>Best-case time complexity: O(n).
      * Average and worst-case time complexity: O(n^2).</p>
      *
-     * @param data the input array
-     * @return a sorted copy of the input array
-     * @throws IllegalArgumentException if data is null
      */
 
     @Override
