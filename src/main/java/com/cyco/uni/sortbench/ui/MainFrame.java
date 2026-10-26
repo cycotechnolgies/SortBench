@@ -1,0 +1,533 @@
+package com.cyco.uni.sortbench.ui;
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.io.File;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTable;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.ListSelectionModel;
+import javax.swing.SwingConstants;
+import javax.swing.border.Border;
+import javax.swing.table.DefaultTableModel;
+
+/**
+ * Main window for the SortBench Sorting Algorithm Performance Analyzer.
+ *
+ * This class implements the initial GUI layout. CSV parsing and sorting
+ * benchmark integration can be connected to the controls in a later issue.
+ */
+public class MainFrame extends JFrame {
+
+    private static final Color BLUE = new Color(28, 112, 205);
+    private static final Color DARK_BLUE = new Color(29, 69, 126);
+    private static final Color PALE_BLUE = new Color(235, 244, 255);
+    private static final Color BORDER = new Color(195, 211, 231);
+    private static final Color TEXT = new Color(31, 51, 82);
+    private static final Color GREEN = new Color(25, 129, 91);
+    private static final Font BODY_FONT = new Font("SansSerif", Font.PLAIN, 14);
+    private static final Font SECTION_FONT = new Font("SansSerif", Font.BOLD, 17);
+    private static final DateTimeFormatter TIME_FORMAT =
+            DateTimeFormatter.ofPattern("HH:mm:ss");
+
+    private final JTextField filePathField = new JTextField();
+    private final JComboBox<String> numericColumnCombo = new JComboBox<>(
+            new String[]{"Math_Score (Numeric)", "Age (Numeric)", "English_Score (Numeric)"});
+    private final JTextArea logArea = new JTextArea();
+    private final JTable previewTable;
+    private final JTable resultsTable;
+    private final JCheckBox[] algorithmChecks = new JCheckBox[]{
+        new JCheckBox("Insertion Sort", true),
+        new JCheckBox("Shell Sort", true),
+        new JCheckBox("Merge Sort", true),
+        new JCheckBox("Quick Sort", true),
+        new JCheckBox("Heap Sort", true)
+    };
+
+    public MainFrame() {
+        super("Sorting Algorithm Performance Analyzer");
+
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setMinimumSize(new Dimension(1050, 720));
+        setSize(1360, 900);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout(10, 10));
+        getContentPane().setBackground(new Color(246, 249, 253));
+
+        previewTable = createPreviewTable();
+        resultsTable = createResultsTable();
+
+        add(createHeader(), BorderLayout.NORTH);
+        add(createMainContent(), BorderLayout.CENTER);
+        add(createLogPanel(), BorderLayout.SOUTH);
+
+        log("Application window initialized.");
+        log("Upload a CSV file to begin.");
+    }
+
+    private JPanel createHeader() {
+        JPanel header = new JPanel(new BorderLayout(18, 4));
+        header.setBackground(DARK_BLUE);
+        header.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(18, 83, 151)),
+                BorderFactory.createEmptyBorder(17, 24, 17, 24)));
+
+        JLabel icon = new JLabel("▥");
+        icon.setForeground(Color.WHITE);
+        icon.setFont(new Font("SansSerif", Font.BOLD, 43));
+        icon.setHorizontalAlignment(SwingConstants.CENTER);
+        icon.setPreferredSize(new Dimension(58, 60));
+
+        JLabel title = new JLabel("Sorting Algorithm Performance Analyzer");
+        title.setForeground(Color.WHITE);
+        title.setFont(new Font("SansSerif", Font.BOLD, 25));
+
+        JLabel subtitle = new JLabel(
+                "Upload a CSV file, select a numeric column, and compare the performance of different sorting algorithms.");
+        subtitle.setForeground(new Color(221, 235, 252));
+        subtitle.setFont(new Font("SansSerif", Font.PLAIN, 15));
+
+        JPanel heading = new JPanel();
+        heading.setOpaque(false);
+        heading.setLayout(new BoxLayout(heading, BoxLayout.Y_AXIS));
+        heading.add(title);
+        heading.add(Box.createVerticalStrut(7));
+        heading.add(subtitle);
+
+        header.add(icon, BorderLayout.WEST);
+        header.add(heading, BorderLayout.CENTER);
+        return header;
+    }
+
+    private JSplitPane createMainContent() {
+        JPanel leftPanel = new JPanel();
+        leftPanel.setOpaque(false);
+        leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
+        leftPanel.add(createUploadPanel());
+        leftPanel.add(Box.createVerticalStrut(10));
+        leftPanel.add(createColumnPanel());
+        leftPanel.add(Box.createVerticalStrut(10));
+        leftPanel.add(createAlgorithmsPanel());
+        leftPanel.add(Box.createVerticalGlue());
+
+        JPanel rightPanel = new JPanel(new BorderLayout(0, 10));
+        rightPanel.setOpaque(false);
+        rightPanel.add(createPreviewPanel(), BorderLayout.CENTER);
+        rightPanel.add(createResultsPanel(), BorderLayout.SOUTH);
+
+        JScrollPane leftScroll = new JScrollPane(leftPanel);
+        leftScroll.setBorder(BorderFactory.createEmptyBorder());
+        leftScroll.setOpaque(false);
+        leftScroll.getViewport().setOpaque(false);
+        leftScroll.getVerticalScrollBar().setUnitIncrement(16);
+        leftScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
+        JSplitPane splitPane = new JSplitPane(
+                JSplitPane.HORIZONTAL_SPLIT, leftScroll, rightPanel);
+        splitPane.setResizeWeight(0.37);
+        splitPane.setDividerLocation(450);
+        splitPane.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
+        splitPane.setOpaque(false);
+        return splitPane;
+    }
+
+    private JPanel createUploadPanel() {
+        JPanel panel = createSectionPanel("1. Upload CSV File");
+        GridBagConstraints gbc = constraints();
+
+        filePathField.setFont(BODY_FONT);
+        filePathField.setEditable(false);
+        filePathField.setText("No file selected");
+        filePathField.setToolTipText("Selected CSV file path");
+
+        JButton browseButton = new JButton("Browse...");
+        styleButton(browseButton, false);
+        browseButton.addActionListener(event -> chooseCsvFile());
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.gridwidth = 1;
+        gbc.weightx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        panel.add(filePathField, gbc);
+
+        gbc.gridx = 1;
+        gbc.gridy = 1;
+        gbc.weightx = 0;
+        gbc.insets = new Insets(6, 8, 6, 0);
+        panel.add(browseButton, gbc);
+
+        JLabel status = new JLabel("●  Ready to load a CSV file");
+        status.setForeground(GREEN);
+        status.setFont(BODY_FONT);
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.gridwidth = 2;
+        gbc.insets = new Insets(10, 2, 2, 2);
+        panel.add(status, gbc);
+
+        JLabel hint = new JLabel("Supported format: .csv");
+        hint.setForeground(new Color(95, 111, 132));
+        hint.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        gbc.gridy = 3;
+        gbc.insets = new Insets(3, 2, 0, 2);
+        panel.add(hint, gbc);
+        return panel;
+    }
+
+    private JPanel createColumnPanel() {
+        JPanel panel = createSectionPanel("2. Select Column to Sort");
+        GridBagConstraints gbc = constraints();
+
+        JLabel label = new JLabel("Available numeric columns:");
+        label.setFont(BODY_FONT);
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.gridwidth = 2;
+        gbc.weightx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        panel.add(label, gbc);
+
+        numericColumnCombo.setFont(BODY_FONT);
+        numericColumnCombo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+        gbc.gridy = 2;
+        gbc.insets = new Insets(5, 2, 10, 2);
+        panel.add(numericColumnCombo, gbc);
+
+        JLabel info = new JLabel(
+                "<html><body style='width:280px'>ⓘ  Only numeric columns can be selected for sorting.</body></html>");
+        info.setOpaque(true);
+        info.setBackground(PALE_BLUE);
+        info.setForeground(new Color(26, 91, 163));
+        info.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(166, 207, 250)),
+                BorderFactory.createEmptyBorder(9, 10, 9, 10)));
+        info.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        gbc.gridy = 3;
+        gbc.insets = new Insets(0, 0, 0, 0);
+        panel.add(info, gbc);
+        return panel;
+    }
+
+    private JPanel createAlgorithmsPanel() {
+        JPanel panel = createSectionPanel("3. Choose Sorting Algorithms");
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+
+        for (JCheckBox checkBox : algorithmChecks) {
+            checkBox.setFont(BODY_FONT);
+            checkBox.setForeground(TEXT);
+            checkBox.setOpaque(false);
+            checkBox.setAlignmentX(LEFT_ALIGNMENT);
+            checkBox.setFocusPainted(false);
+            checkBox.setBorder(BorderFactory.createEmptyBorder(4, 0, 4, 0));
+            panel.add(checkBox);
+        }
+
+        panel.add(Box.createVerticalStrut(8));
+        JSeparatorLine separator = new JSeparatorLine();
+        separator.setAlignmentX(LEFT_ALIGNMENT);
+        panel.add(separator);
+        panel.add(Box.createVerticalStrut(12));
+
+        
+        JButton startButton = new JButton("▶   Start Analysis");
+
+        // Button text
+        startButton.setFont(new Font("SansSerif", Font.BOLD, 16));
+        startButton.setForeground(Color.WHITE);
+
+        // Force Swing to use the specified background color
+        startButton.setUI(new javax.swing.plaf.basic.BasicButtonUI());
+        startButton.setBackground(BLUE);
+        startButton.setOpaque(true);
+        startButton.setContentAreaFilled(true);
+        startButton.setBorderPainted(false);
+        startButton.setFocusPainted(false);
+
+        // Button layout and size
+        startButton.setBorder(
+                BorderFactory.createEmptyBorder(13, 16, 13, 16)
+        );
+        startButton.setAlignmentX(LEFT_ALIGNMENT);
+        startButton.setMaximumSize(
+                new Dimension(Integer.MAX_VALUE, 48)
+        );
+
+        // Action
+        startButton.addActionListener(
+                event -> startAnalysisPlaceholder()
+        );
+
+        panel.add(startButton);
+
+
+        return panel;
+    }
+
+    private JPanel createPreviewPanel() {
+        JPanel panel = createSectionPanel("▦  Dataset Preview");
+        GridBagConstraints gbc = constraints();
+        JScrollPane tableScroll = new JScrollPane(previewTable);
+        tableScroll.setPreferredSize(new Dimension(500, 270));
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.gridwidth = 2;
+        gbc.weightx = 1;
+        gbc.weighty = 1;
+        gbc.fill = GridBagConstraints.BOTH;
+        panel.add(tableScroll, gbc);
+        return panel;
+    }
+
+    private JPanel createResultsPanel() {
+        JPanel panel = createSectionPanel("◷  Sorting Performance Results");
+        GridBagConstraints gbc = constraints();
+        JScrollPane tableScroll = new JScrollPane(resultsTable);
+        tableScroll.setPreferredSize(new Dimension(500, 205));
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.gridwidth = 2;
+        gbc.weightx = 1;
+        gbc.weighty = 1;
+        gbc.fill = GridBagConstraints.BOTH;
+        panel.add(tableScroll, gbc);
+
+        JPanel bestPanel = new JPanel(new BorderLayout(12, 2));
+        bestPanel.setBackground(new Color(234, 249, 238));
+        bestPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(157, 218, 177)),
+                BorderFactory.createEmptyBorder(10, 14, 10, 14)));
+
+        JLabel trophy = new JLabel("🏆");
+        trophy.setFont(new Font("SansSerif", Font.PLAIN, 26));
+        JLabel bestLabel = new JLabel(
+                "<html><b>Best Performing Algorithm</b><br>Results will appear after analysis.</html>");
+        bestLabel.setForeground(new Color(21, 112, 78));
+        bestLabel.setFont(BODY_FONT);
+        bestPanel.add(trophy, BorderLayout.WEST);
+        bestPanel.add(bestLabel, BorderLayout.CENTER);
+        gbc.gridy = 2;
+        gbc.weighty = 0;
+        gbc.insets = new Insets(10, 2, 2, 2);
+        panel.add(bestPanel, gbc);
+        return panel;
+    }
+
+    private JPanel createLogPanel() {
+        JPanel panel = createSectionPanel("▤  Log / Messages");
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER),
+                BorderFactory.createEmptyBorder(8, 12, 10, 12)));
+        panel.setLayout(new GridBagLayout());
+
+        logArea.setEditable(false);
+        logArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        logArea.setForeground(new Color(29, 54, 91));
+        logArea.setBackground(Color.WHITE);
+        logArea.setLineWrap(false);
+        logArea.setRows(4);
+
+        JScrollPane scrollPane = new JScrollPane(logArea);
+        scrollPane.setPreferredSize(new Dimension(700, 95));
+        GridBagConstraints gbc = constraints();
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.gridwidth = 2;
+        gbc.weightx = 1;
+        gbc.weighty = 1;
+        gbc.fill = GridBagConstraints.BOTH;
+        panel.add(scrollPane, gbc);
+        panel.setPreferredSize(new Dimension(900, 155));
+        return panel;
+    }
+
+    private JTable createPreviewTable() {
+        String[] columns = {"ID", "Name", "Age", "Math_Score", "English_Score"};
+        Object[][] rows = {
+            {"1", "Alice", "20", "85", "78"},
+            {"2", "Bob", "21", "92", "88"},
+            {"3", "Charlie", "19", "76", "70"},
+            {"4", "Diana", "22", "88", "90"},
+            {"5", "Evan", "20", "95", "93"},
+            {"…", "…", "…", "…", "…"}
+        };
+        JTable table = new JTable(new DefaultTableModel(rows, columns) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        });
+        styleTable(table);
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        return table;
+    }
+
+    private JTable createResultsTable() {
+        String[] columns = {"Algorithm", "Execution Time (ms)", "Status"};
+        Object[][] rows = {
+            {"Insertion Sort", "—", "Waiting"},
+            {"Shell Sort", "—", "Waiting"},
+            {"Merge Sort", "—", "Waiting"},
+            {"Quick Sort", "—", "Waiting"},
+            {"Heap Sort", "—", "Waiting"}
+        };
+        JTable table = new JTable(new DefaultTableModel(rows, columns) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        });
+        styleTable(table);
+        table.setRowHeight(29);
+        return table;
+    }
+
+    private void styleTable(JTable table) {
+        table.setFont(BODY_FONT);
+        table.setForeground(TEXT);
+        table.setBackground(Color.WHITE);
+        table.setGridColor(new Color(218, 226, 237));
+        table.setRowHeight(31);
+        table.setShowGrid(true);
+        table.setFillsViewportHeight(true);
+        table.getTableHeader().setFont(new Font("SansSerif", Font.BOLD, 13));
+        table.getTableHeader().setForeground(TEXT);
+        table.getTableHeader().setBackground(new Color(239, 243, 249));
+        table.getTableHeader().setPreferredSize(new Dimension(100, 34));
+        table.setIntercellSpacing(new Dimension(1, 1));
+    }
+
+    private JPanel createSectionPanel(String title) {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(Color.WHITE);
+        Border outer = BorderFactory.createLineBorder(BORDER);
+        Border inner = BorderFactory.createEmptyBorder(13, 14, 13, 14);
+        panel.setBorder(BorderFactory.createCompoundBorder(outer, inner));
+        panel.setAlignmentX(LEFT_ALIGNMENT);
+        panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+
+        JLabel heading = new JLabel(title);
+        heading.setFont(SECTION_FONT);
+        heading.setForeground(DARK_BLUE);
+        heading.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
+
+        GridBagConstraints gbc = constraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 2;
+        gbc.weightx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        panel.add(heading, gbc);
+
+        // The remaining controls are added below the heading by each panel method.
+        return panel;
+    }
+
+    private GridBagConstraints constraints() {
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 2, 5, 2);
+        gbc.anchor = GridBagConstraints.NORTHWEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1;
+        return gbc;
+    }
+
+    private void chooseCsvFile() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Select a CSV dataset");
+        chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+                "CSV files (*.csv)", "csv"));
+
+        int result = chooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = chooser.getSelectedFile();
+            filePathField.setText(selectedFile.getAbsolutePath());
+            log("Selected CSV file: " + selectedFile.getName());
+            JOptionPane.showMessageDialog(
+                    this,
+                    "The file path has been selected.\nCSV loading will be connected in the CSV feature.",
+                    "CSV selected",
+                    JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    private void startAnalysisPlaceholder() {
+        int selectedCount = 0;
+        StringBuilder selectedNames = new StringBuilder();
+        for (JCheckBox checkBox : algorithmChecks) {
+            if (checkBox.isSelected()) {
+                selectedCount++;
+                if (selectedNames.length() > 0) {
+                    selectedNames.append(", ");
+                }
+                selectedNames.append(checkBox.getText());
+            }
+        }
+
+        if (selectedCount == 0) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Select at least one sorting algorithm.",
+                    "No algorithm selected",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        log("Selected column: " + numericColumnCombo.getSelectedItem());
+        log("Selected algorithms: " + selectedNames);
+        log("Analysis controls are ready; benchmark integration is pending.");
+        JOptionPane.showMessageDialog(
+                this,
+                "The interface is ready.\nCSV parsing and performance analysis will be connected in their respective features.",
+                "Analysis not connected yet",
+                JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void log(String message) {
+        String timestamp = LocalTime.now().format(TIME_FORMAT);
+        logArea.append("[" + timestamp + "] " + message + System.lineSeparator());
+        logArea.setCaretPosition(logArea.getDocument().getLength());
+    }
+
+    private void styleButton(JButton button, boolean primary) {
+        button.setFont(new Font("SansSerif", Font.BOLD, 14));
+        button.setForeground(primary ? Color.WHITE : DARK_BLUE);
+        button.setBackground(primary ? BLUE : new Color(247, 250, 255));
+        button.setFocusPainted(false);
+        button.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(primary ? BLUE : BORDER),
+                BorderFactory.createEmptyBorder(9, 14, 9, 14)));
+    }
+
+    /**
+     * Small divider used in the algorithm selection panel.
+     */
+    private static class JSeparatorLine extends JPanel {
+        JSeparatorLine() {
+            setBackground(new Color(221, 229, 239));
+            setPreferredSize(new Dimension(200, 1));
+            setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+        }
+    }
+}
