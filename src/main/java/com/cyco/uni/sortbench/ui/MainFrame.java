@@ -8,6 +8,19 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import javax.swing.SwingWorker;
+import com.cyco.uni.sortbench.analysis.ColumnDetector;
+import com.cyco.uni.sortbench.csv.CSVReader;
+import com.cyco.uni.sortbench.model.Dataset;
+import com.cyco.uni.sortbench.model.SortResult;
+import com.cyco.uni.sortbench.performance.PerformanceEvaluator;
+import com.cyco.uni.sortbench.sorting.*;
+import com.cyco.uni.sortbench.validation.NumericValidator;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import javax.swing.BorderFactory;
@@ -51,9 +64,14 @@ public class MainFrame extends JFrame {
             DateTimeFormatter.ofPattern("HH:mm:ss");
 
     private final JTextField filePathField = new JTextField();
-    private final JComboBox<String> numericColumnCombo = new JComboBox<>(
-            new String[]{"Math_Score (Numeric)", "Age (Numeric)", "English_Score (Numeric)"});
+    private final JComboBox<String> numericColumnCombo = new JComboBox<>();
     private final JTextArea logArea = new JTextArea();
+    private Dataset dataset;
+    private final CSVReader csvReader = new CSVReader();
+    private final ColumnDetector columnDetector = new ColumnDetector();
+    private final NumericValidator numericValidator = new NumericValidator();
+    private final PerformanceEvaluator performanceEvaluator = new PerformanceEvaluator();
+    private JLabel bestLabel;
     private final JTable previewTable;
     private final JTable resultsTable;
     private final JCheckBox[] algorithmChecks = new JCheckBox[]{
@@ -275,7 +293,7 @@ public class MainFrame extends JFrame {
 
         // Action
         startButton.addActionListener(
-                event -> startAnalysisPlaceholder()
+                event -> startAnalysis()
         );
 
         panel.add(startButton);
@@ -320,7 +338,7 @@ public class MainFrame extends JFrame {
 
         JLabel trophy = new JLabel("🏆");
         trophy.setFont(new Font("SansSerif", Font.PLAIN, 26));
-        JLabel bestLabel = new JLabel(
+        bestLabel = new JLabel(
                 "<html><b>Best Performing Algorithm</b><br>Results will appear after analysis.</html>");
         bestLabel.setForeground(new Color(21, 112, 78));
         bestLabel.setFont(BODY_FONT);
@@ -362,20 +380,8 @@ public class MainFrame extends JFrame {
     }
 
     private JTable createPreviewTable() {
-        String[] columns = {"ID", "Name", "Age", "Math_Score", "English_Score"};
-        Object[][] rows = {
-            {"1", "Alice", "20", "85", "78"},
-            {"2", "Bob", "21", "92", "88"},
-            {"3", "Charlie", "19", "76", "70"},
-            {"4", "Diana", "22", "88", "90"},
-            {"5", "Evan", "20", "95", "93"},
-            {"…", "…", "…", "…", "…"}
-        };
-        JTable table = new JTable(new DefaultTableModel(rows, columns) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
+        JTable table = new JTable(new DefaultTableModel(new Object[0][0], new Object[0]) {
+            @Override public boolean isCellEditable(int row, int column) { return false; }
         });
         styleTable(table);
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
@@ -459,49 +465,175 @@ public class MainFrame extends JFrame {
         chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
                 "CSV files (*.csv)", "csv"));
 
-        int result = chooser.showOpenDialog(this);
-        if (result == JFileChooser.APPROVE_OPTION) {
-            File selectedFile = chooser.getSelectedFile();
+        if (chooser.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) return;
+        File selectedFile = chooser.getSelectedFile();
+        try {
+            Dataset loaded = csvReader.readCSV(selectedFile.toPath());
+            List<String> numericColumns = columnDetector.detectNumericColumns(loaded);
+            if (loaded.getRowCount() == 0) {
+                JOptionPane.showMessageDialog(this, "The CSV contains headers but no data rows.",
+                        "Empty dataset", JOptionPane.WARNING_MESSAGE);
+            }
+            dataset = loaded;
             filePathField.setText(selectedFile.getAbsolutePath());
-            log("Selected CSV file: " + selectedFile.getName());
-            JOptionPane.showMessageDialog(
-                    this,
-                    "The file path has been selected.\nCSV loading will be connected in the CSV feature.",
-                    "CSV selected",
-                    JOptionPane.INFORMATION_MESSAGE);
+            numericColumnCombo.removeAllItems();
+            for (String column : numericColumns) numericColumnCombo.addItem(column);
+            updatePreviewTable();
+            resetResultsTable();
+            log("Loaded CSV: " + selectedFile.getName() + " (" + dataset.getRowCount()
+                    + " rows, " + dataset.getColumnCount() + " columns).");
+            log("Detected " + numericColumns.size() + " numeric column(s): " + numericColumns);
+            if (numericColumns.isEmpty()) {
+                log("No numeric columns were found. Check the CSV values.");
+                JOptionPane.showMessageDialog(this,
+                        "No numeric columns were detected in this CSV.",
+                        "No numeric columns", JOptionPane.WARNING_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        "CSV loaded successfully. Select a numeric column and start analysis.",
+                        "Dataset loaded", JOptionPane.INFORMATION_MESSAGE);
+            }
+        } catch (IOException | IllegalArgumentException ex) {
+            dataset = null;
+            numericColumnCombo.removeAllItems();
+            filePathField.setText("No file selected");
+            log("CSV load failed: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this, "Could not load CSV:\\n" + ex.getMessage(),
+                    "CSV error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void startAnalysisPlaceholder() {
-        int selectedCount = 0;
-        StringBuilder selectedNames = new StringBuilder();
-        for (JCheckBox checkBox : algorithmChecks) {
-            if (checkBox.isSelected()) {
-                selectedCount++;
-                if (selectedNames.length() > 0) {
-                    selectedNames.append(", ");
-                }
-                selectedNames.append(checkBox.getText());
-            }
+    private void updatePreviewTable() {
+        DefaultTableModel model = new DefaultTableModel(dataset.getColumnNames().toArray(), 0) {
+            @Override public boolean isCellEditable(int row, int column) { return false; }
+        };
+        int limit = Math.min(dataset.getRowCount(), 100);
+        for (int i = 0; i < limit; i++) {
+            model.addRow(dataset.getRows().get(i).toArray());
         }
+        if (dataset.getRowCount() > limit) {
+            log("Preview limited to first " + limit + " rows.");
+        }
+        previewTable.setModel(model);
+        styleTable(previewTable);
+        previewTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+    }
 
-        if (selectedCount == 0) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Select at least one sorting algorithm.",
-                    "No algorithm selected",
-                    JOptionPane.WARNING_MESSAGE);
+    private void resetResultsTable() {
+        DefaultTableModel model = (DefaultTableModel) resultsTable.getModel();
+        model.setRowCount(0);
+        for (String name : Arrays.asList("Insertion Sort", "Shell Sort", "Merge Sort",
+                "Quick Sort", "Heap Sort")) {
+            model.addRow(new Object[]{name, "—", "Waiting"});
+        }
+        bestLabel.setText("<html><b>Best Performing Algorithm</b><br>Results will appear after analysis.</html>");
+    }
+
+    private void startAnalysis() {
+        if (dataset == null) {
+            JOptionPane.showMessageDialog(this, "Upload a valid CSV file first.",
+                    "No dataset", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        String selectedColumn = (String) numericColumnCombo.getSelectedItem();
+        if (selectedColumn == null) {
+            JOptionPane.showMessageDialog(this, "No numeric column is available to sort.",
+                    "No numeric column", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        log("Selected column: " + numericColumnCombo.getSelectedItem());
-        log("Selected algorithms: " + selectedNames);
-        log("Analysis controls are ready; benchmark integration is pending.");
-        JOptionPane.showMessageDialog(
-                this,
-                "The interface is ready.\nCSV parsing and performance analysis will be connected in their respective features.",
-                "Analysis not connected yet",
-                JOptionPane.INFORMATION_MESSAGE);
+        List<SortingAlgorithm> algorithms = new ArrayList<>();
+        if (algorithmChecks[0].isSelected()) algorithms.add(new InsertionSort());
+        if (algorithmChecks[1].isSelected()) algorithms.add(new ShellSort());
+        if (algorithmChecks[2].isSelected()) algorithms.add(new MergeSort());
+        if (algorithmChecks[3].isSelected()) algorithms.add(new QuickSort());
+        if (algorithmChecks[4].isSelected()) algorithms.add(new HeapSort());
+        if (algorithms.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Select at least one sorting algorithm.",
+                    "No algorithm selected", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        int columnIndex = dataset.getColumnNames().indexOf(selectedColumn);
+        List<Double> numbers = new ArrayList<>();
+        for (int row = 0; row < dataset.getRowCount(); row++) {
+            String value = dataset.getValueAt(row, columnIndex);
+            NumericValidator.Status status = numericValidator.validate(value);
+            if (status == NumericValidator.Status.VALID) {
+                numbers.add(numericValidator.parseNumber(value));
+            } else if (status == NumericValidator.Status.INVALID) {
+                JOptionPane.showMessageDialog(this,
+                        "Invalid numeric value at CSV row " + (row + 2) + ": " + value,
+                        "Invalid data", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            // Missing cells are ignored; ColumnDetector also ignores empty cells.
+        }
+        if (numbers.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "The selected column contains no numeric values.",
+                    "No data", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        double[] input = new double[numbers.size()];
+        for (int i = 0; i < numbers.size(); i++) input[i] = numbers.get(i);
+
+        log("Starting analysis on column '" + selectedColumn + "' with " + input.length + " values.");
+        log("Algorithms: " + algorithms.stream().map(SortingAlgorithm::getName).toList());
+        setControlsEnabled(false);
+
+        new SwingWorker<List<SortResult>, Void>() {
+            @Override protected List<SortResult> doInBackground() {
+                return performanceEvaluator.evaluate(input, algorithms);
+            }
+            @Override protected void done() {
+                try {
+                    List<SortResult> results = get();
+                    DefaultTableModel model = (DefaultTableModel) resultsTable.getModel();
+                    model.setRowCount(0);
+                    SortResult best = null;
+                    for (SortResult result : results) {
+                        String time = Double.isFinite(result.getExecutionTimeMs())
+                                ? String.format(java.util.Locale.US, "%.6f", result.getExecutionTimeMs())
+                                : "—";
+                        model.addRow(new Object[]{result.getAlgorithmName(), time, result.getStatus()});
+                        log(result.getAlgorithmName() + ": " + time + " ms (" + result.getStatus() + ")");
+                        if ("Success".equals(result.getStatus())
+                                && (best == null || result.getExecutionTimeMs() < best.getExecutionTimeMs())) {
+                            best = result;
+                        }
+                    }
+                    if (best != null) {
+                        bestLabel.setText("<html><b>Best Performing Algorithm</b><br>"
+                                + best.getAlgorithmName() + " — "
+                                + String.format(java.util.Locale.US, "%.6f ms", best.getExecutionTimeMs())
+                                + "</html>");
+                        log("Best measured result: " + best.getAlgorithmName());
+                    } else {
+                        bestLabel.setText("<html><b>Best Performing Algorithm</b><br>No successful results.</html>");
+                    }
+                    SortResult firstSuccessful = results.stream()
+                            .filter(r -> "Success".equals(r.getStatus())).findFirst().orElse(null);
+                    if (firstSuccessful != null && firstSuccessful.getSortedData() != null) {
+                        log("Sorted output preview: " + Arrays.toString(Arrays.copyOf(
+                                firstSuccessful.getSortedData(),
+                                Math.min(10, firstSuccessful.getSortedData().length))));
+                    }
+                    log("Analysis completed.");
+                } catch (Exception ex) {
+                    log("Analysis failed: " + ex.getMessage());
+                    JOptionPane.showMessageDialog(MainFrame.this,
+                            "Analysis failed: " + ex.getMessage(), "Analysis error",
+                            JOptionPane.ERROR_MESSAGE);
+                } finally {
+                    setControlsEnabled(true);
+                }
+            }
+        }.execute();
+    }
+
+    private void setControlsEnabled(boolean enabled) {
+        numericColumnCombo.setEnabled(enabled);
+        for (JCheckBox checkBox : algorithmChecks) checkBox.setEnabled(enabled);
     }
 
     private void log(String message) {
