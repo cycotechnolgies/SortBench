@@ -267,7 +267,7 @@ The SortBench graphical user interface will open.
 
 The planned interface contains the following sections:
 
-<img width="1312" height="1199" alt="ChatGPT Image Sep 29, 2026, 03_06_19 PM" src="https://github.com/user-attachments/assets/c39eba57-307e-4a7a-b812-469dc7483901" />
+<img width="1366" height="702" alt="image" src="https://github.com/user-attachments/assets/0b75e8ba-2408-437a-85d1-d0b623eb3e23" />
 
 ---
 
